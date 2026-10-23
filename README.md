@@ -55,7 +55,7 @@ On a Raspberry Pi or home server, Goal Horn can run without a window and play th
 
 ```
 docker run -d --name goal-horn --network host --device /dev/snd \
-  -v goal-horn-data:/data ghcr.io/colbykordas/goal-horn
+  -v goal-horn-data:/data ghcr.io/cwk01/goal-horn
 ```
 
 Or with Node.js 20 or newer and `mpg123` installed:

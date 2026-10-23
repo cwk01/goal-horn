@@ -9,7 +9,7 @@
   "homepage": "https://goalhorn.colbykordas.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/colbykordas/goal-horn.git"
+    "url": "https://github.com/cwk01/goal-horn.git"
   },
   "scripts": {
     "start": "electron .",
@@ -78,7 +78,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "colbykordas",
+      "owner": "cwk01",
       "repo": "goal-horn"
     }
   },

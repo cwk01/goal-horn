@@ -2,7 +2,7 @@
 # sound card and serves the control and speaker pages on port 8787.
 #
 #   docker run -d --name goal-horn --network host --device /dev/snd \
-#     -v goal-horn-data:/data ghcr.io/colbykordas/goal-horn
+#     -v goal-horn-data:/data ghcr.io/cwk01/goal-horn
 #
 # --network host lets phones on your Wi-Fi reach it and shows the right address.
 FROM node:22-slim
