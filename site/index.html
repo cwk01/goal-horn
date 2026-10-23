@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal Horn: your team's horn, in every room</title>
+<meta name="description" content="Free app for Windows and Mac that plays your team's goal horn when they score, on your computer and on every phone, tablet and TV in the house.">
+<link rel="icon" href="icon.svg">
+<style>
+@font-face { font-family: 'Big Shoulders Display'; font-weight: 900; font-display: swap; src: url('fonts/big-shoulders-display-latin-900-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Big Shoulders Display'; font-weight: 800; font-display: swap; src: url('fonts/big-shoulders-display-latin-800-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Atkinson Hyperlegible'; font-weight: 400; font-display: swap; src: url('fonts/atkinson-hyperlegible-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Atkinson Hyperlegible'; font-weight: 700; font-display: swap; src: url('fonts/atkinson-hyperlegible-latin-700-normal.woff2') format('woff2'); }
+:root { --bg: #131A22; --panel: #1B242E; --line: #2D3946; --text: #ECF1F6; --muted: #94A2B3; --team: #FCB514; --on-team: #10151B;
+  --display: 'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif; --body: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 18px/1.55 var(--body); }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--team); outline-offset: 3px; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+header { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
+header .brand { font: 800 26px/1 var(--display); display: flex; align-items: center; gap: 10px; text-decoration: none; }
+header .brand img { width: 30px; height: 30px; }
+header nav a { color: var(--muted); text-decoration: none; margin-left: 22px; font-size: 16px; }
+header nav a:hover { color: var(--text); }
+
+.hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; padding: 40px 0 80px; }
+.hero h1 { font: 900 clamp(52px, 8vw, 96px)/0.92 var(--display); margin: 0 0 20px; }
+.hero p { color: var(--muted); font-size: 20px; margin: 0 0 28px; max-width: 34ch; }
+.dl { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.btn { display: inline-flex; align-items: center; gap: 10px; border-radius: 14px; padding: 14px 22px; font-weight: 700; text-decoration: none; border: 1px solid var(--line); background: var(--panel); }
+.btn.primary { background: var(--team); color: var(--on-team); border-color: transparent; font-size: 19px; }
+.dl small { display: block; color: var(--muted); font-size: 14px; margin-top: 12px; width: 100%; }
+
+.press { display: grid; justify-items: center; gap: 14px; }
+.horn { width: min(340px, 78vw); aspect-ratio: 1; border-radius: 50%; border: 0; cursor: pointer;
+  background: radial-gradient(circle at 50% 38%, #FFD66B 0%, var(--team) 55%, #B98200 100%);
+  color: var(--on-team); font: 900 84px/1 var(--display); box-shadow: 0 0 0 14px rgba(252,181,20,.18), 0 20px 50px rgba(0,0,0,.5); transition: transform .08s; }
+.horn:active { transform: scale(.97); }
+.horn.on { animation: siren .5s ease-in-out infinite alternate; }
+@keyframes siren { from { box-shadow: 0 0 0 14px rgba(252,181,20,.25), 0 0 40px var(--team); } to { box-shadow: 0 0 0 34px rgba(252,181,20,.08), 0 0 120px var(--team); } }
+.press .hint { color: var(--muted); font-size: 15px; }
+
+.how { padding: 60px 0; border-top: 1px solid var(--line); }
+.how h2, .faq h2 { font: 800 44px/1 var(--display); margin: 0 0 30px; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; counter-reset: step; padding: 0; margin: 0; }
+.steps li { list-style: none; counter-increment: step; }
+.steps li::before { content: counter(step); display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--team); color: var(--on-team); font: 900 24px/1 var(--display); margin-bottom: 14px; }
+.steps h3 { margin: 0 0 6px; font-size: 20px; }
+.steps p { margin: 0; color: var(--muted); }
+
+.leagues { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 36px; }
+.leagues span { border: 1px solid var(--line); border-radius: 999px; padding: 6px 16px; font-weight: 700; }
+
+.faq { padding: 60px 0 80px; border-top: 1px solid var(--line); }
+.faq details { border-bottom: 1px solid var(--line); padding: 16px 0; max-width: 72ch; }
+.faq summary { font-weight: 700; cursor: pointer; font-size: 19px; }
+.faq details p { color: var(--muted); margin: 10px 0 0; }
+
+footer { color: var(--muted); font-size: 15px; padding: 30px 0 50px; border-top: 1px solid var(--line); }
+
+@media (max-width: 820px) {
+  .hero { grid-template-columns: 1fr; padding-top: 10px; }
+  .press { order: -1; }
+  .steps { grid-template-columns: 1fr; }
+  header nav { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .horn.on { animation: none; outline: 6px solid #fff; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="./"><img src="icon.svg" alt="">Goal Horn</a>
+    <nav><a href="#how">How it works</a><a href="#faq">Questions</a><a href="https://github.com/colbykordas/goal-horn">Source code</a></nav>
+  </header>
+
+  <section class="hero">
+    <div>
+      <h1>Your team scores. The whole house hears it.</h1>
+      <p>Goal Horn is a free app that plays your team's horn the moment they score, on your computer and on every phone, tablet and TV in the house.</p>
+      <div class="dl">
+        <a class="btn primary" id="primary" href="https://github.com/colbykordas/goal-horn/releases/latest/download/Goal-Horn-win-x64.exe">Download for Windows</a>
+        <a class="btn" id="secondary" href="https://github.com/colbykordas/goal-horn/releases/latest/download/Goal-Horn-mac-universal.dmg">Download for Mac</a>
+        <small>Free and open source. Also on <a href="https://github.com/colbykordas/goal-horn/releases/latest/download/Goal-Horn-linux-x86_64.AppImage">Linux</a> and <a href="https://github.com/colbykordas/goal-horn#running-it-without-a-screen">Raspberry Pi</a>.</small>
+      </div>
+    </div>
+    <div class="press">
+      <button class="horn" id="horn" type="button" aria-label="Play the sample horn">GOAL</button>
+      <span class="hint">Press it. This is the horn Goal Horn ships with.</span>
+    </div>
+  </section>
+
+  <section class="how" id="how">
+    <h2>Set up in about two minutes</h2>
+    <ol class="steps">
+      <li><h3>Install and pick your team</h3><p>Download the app, open it, and choose who you cheer for. It finds their next game on its own.</p></li>
+      <li><h3>Add speakers</h3><p>Scan the code in the app with a phone or tablet, or open the address on a smart TV. Tap "Turn on sound" once.</p></li>
+      <li><h3>Watch the game</h3><p>When your team scores, every speaker plays the horn. Set the TV delay so it goes off when you see the goal, not before.</p></li>
+    </ol>
+    <div class="leagues" aria-label="Supported leagues"><span>NHL</span><span>AHL</span><span>PWHL</span><span>MLB</span><span>NFL</span></div>
+  </section>
+
+  <section class="faq" id="faq">
+    <h2>Questions</h2>
+    <details><summary>Do I need to install anything on the phones and TVs?</summary><p>No. They use their web browser. Only the computer running Goal Horn needs the app, and every device has to be on the same Wi-Fi.</p></details>
+    <details><summary>Will it go off before I see the goal on TV?</summary><p>Not once the TV delay is set. Cable runs about 30 seconds behind live and streaming apps can run 45 to 90 seconds behind. Goal Horn holds the scoreboard and the horn back by the amount you choose.</p></details>
+    <details><summary>Windows or my Mac says the app might not be safe.</summary><p>Goal Horn isn't signed with a paid developer certificate yet, so you see this warning once. On Windows click More info, then Run anyway. On a Mac open System Settings, then Privacy and Security, and click Open Anyway. Windows will then ask about network access: allow it, or speakers can't connect.</p></details>
+    <details><summary>Can I use my own horn or song?</summary><p>Yes. Upload any MP3 in Settings and it plays for that team. Your file stays on your computer.</p></details>
+    <details><summary>Does my computer have to stay on?</summary><p>Yes, during the game. Closing the window keeps Goal Horn running in the tray or menu bar, and it keeps the computer from sleeping while a game is live.</p></details>
+    <details><summary>Which sports play the horn automatically?</summary><p>Goals in the NHL, AHL and PWHL, runs in MLB, and touchdowns in the NFL. The win horn plays when your team wins. You can also press the button whenever you like.</p></details>
+  </section>
+
+  <footer>
+    Goal Horn is made by <a href="https://colbykordas.com">Colby Kordas</a> and released under the MIT license. Not affiliated with any league or team. Scores come from each league's public data.
+  </footer>
+</div>
+<audio id="sample" src="default-goal.mp3" preload="auto"></audio>
+<script>
+  const ua = navigator.userAgent, p = document.getElementById('primary'), s = document.getElementById('secondary');
+  if (/Mac/.test(ua) && !/iPhone|iPad/.test(ua)) {
+    [p.textContent, s.textContent] = [s.textContent, p.textContent];
+    [p.href, s.href] = [s.href, p.href];
+  }
+  const horn = document.getElementById('horn'), audio = document.getElementById('sample');
+  horn.onclick = () => { audio.currentTime = 0; audio.play(); };
+  audio.onplay = () => horn.classList.add('on');
+  audio.onended = audio.onpause = () => horn.classList.remove('on');
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+Big Shoulders Display (c) The Big Shoulders Project Authors, and
+Atkinson Hyperlegible (c) Braille Institute of America, Inc.
+are licensed under the SIL Open Font License, Version 1.1:
+https://openfontlicense.org
+Files copied from the @fontsource npm packages.

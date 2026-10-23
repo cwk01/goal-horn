@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Goal Horn speaker</title>
+<link rel="icon" href="/assets/icon.svg">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/custom.css">
+</head>
+<body>
+<div class="speaker" id="page">
+  <div class="box">
+    <h1 id="teamName">Goal Horn</h1>
+    <button class="big" id="enable" type="button">Turn on sound</button>
+    <div class="state" id="state">Tap the button so this device can play the horn.</div>
+    <p class="muted" id="detail">Phones and tablets need one tap before a web page can make sound.</p>
+    <div class="settings-row hidden" id="controls">
+      <label for="name"><strong>Name this speaker</strong></label>
+      <input type="text" id="name" maxlength="40" placeholder="Living room TV">
+      <label for="vol"><strong>Volume on this device: <span id="volVal"></span>%</strong></label>
+      <input type="range" id="vol" min="0" max="100">
+      <div class="row" style="justify-content:center;margin-top:6px">
+        <button class="btn" type="button" id="test">Play a test</button>
+        <a class="btn quiet" href="/" style="text-decoration:none">Open the controls</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/shared/teams.js"></script>
+<script src="/common.js"></script>
+<script src="/speaker.js"></script>
+</body>
+</html>

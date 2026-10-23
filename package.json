@@ -1,0 +1,86 @@
+{
+  "name": "goal-horn",
+  "productName": "Goal Horn",
+  "version": "1.0.0",
+  "description": "Plays your team's goal horn when they score, on this computer and on any phone, tablet or TV in the house.",
+  "main": "src/main.js",
+  "author": "Colby Kordas",
+  "license": "MIT",
+  "homepage": "https://goalhorn.colbykordas.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/colbykordas/goal-horn.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "server": "node src/server/cli.js",
+    "test": "node test/run.js",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.colbykordas.goalhorn",
+    "productName": "Goal Horn",
+    "artifactName": "Goal-Horn-${os}-${arch}.${ext}",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "build"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "shortcutName": "Goal Horn"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "category": "public.app-category.sports",
+      "icon": "build/icon.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "AudioVideo",
+      "icon": "build/icon.png",
+      "syncDesktopName": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "colbykordas",
+      "repo": "goal-horn"
+    }
+  },
+  "desktopName": "goal-horn.desktop"
+}

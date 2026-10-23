@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal Horn</title>
+<link rel="icon" href="/assets/icon.svg">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/custom.css">
+</head>
+<body>
+
+<header class="top">
+  <h1 class="team-name" id="teamName">Goal Horn<small id="leagueLine"></small></h1>
+  <button class="btn" id="speakersBtn" type="button">Speakers <span class="count" id="speakerCount">0</span></button>
+  <button class="btn" id="settingsBtn" type="button">Settings</button>
+</header>
+
+<main>
+  <section aria-label="Scoreboard" id="boardSection">
+    <div class="board hidden" id="board">
+      <div class="side away" id="away"><img alt=""><div><div class="abbr"></div><div class="score">0</div></div></div>
+      <div class="status">
+        <div class="now" id="statusNow"></div>
+        <div class="sub" id="statusSub"></div>
+        <div class="pips" id="pips"></div>
+        <div class="situation hidden" id="situation"></div>
+      </div>
+      <div class="side home" id="home"><img alt=""><div><div class="abbr"></div><div class="score">0</div></div></div>
+    </div>
+    <div class="next hidden" id="next">
+      <div class="vs"><img id="nextAway" alt=""><span class="muted">at</span><img id="nextHome" alt=""></div>
+      <div class="when" id="nextWhen"></div>
+      <div class="countdown" id="countdown"></div>
+      <div class="muted" id="nextVenue"></div>
+    </div>
+    <p class="notice" id="notice">Checking the schedule.</p>
+  </section>
+
+  <section class="horn-wrap" aria-label="Horn">
+    <button class="horn" id="horn" type="button">GOAL</button>
+    <div class="horn-actions">
+      <button class="btn" id="stopBtn" type="button" disabled>Stop</button>
+      <button class="btn" id="winBtn" type="button">Play win horn</button>
+    </div>
+    <p class="horn-note" id="hornNote"></p>
+  </section>
+
+  <section class="scoring hidden" id="scoring" aria-label="Scoring plays">
+    <div id="awayScoring"><h2></h2><ol></ol></div>
+    <div id="homeScoring"><h2></h2><ol></ol></div>
+  </section>
+</main>
+
+<!-- Speakers -->
+<div class="scrim hidden" data-close></div>
+<aside class="drawer hidden" id="speakersDrawer" aria-label="Speakers">
+  <h2>Speakers <button class="btn quiet" type="button" data-close>Close</button></h2>
+  <p>Any phone, tablet, TV or computer on your Wi-Fi can play the horn. Scan this code with its camera, or type the address into its browser, then tap "Turn on sound".</p>
+  <div class="qr" id="qr"></div>
+  <div class="url" id="speakerUrl"></div>
+  <p class="hint">Keep the speaker page open. Phones stop listening when the screen locks, so plug them in and leave the page up during the game.</p>
+  <h3>Connected now</h3>
+  <ul class="speaker-list" id="speakerList"></ul>
+</aside>
+
+<!-- Settings -->
+<aside class="drawer hidden" id="settingsDrawer" aria-label="Settings">
+  <h2>Settings <button class="btn quiet" type="button" data-close>Close</button></h2>
+
+  <h3>Your team</h3>
+  <div class="segmented" id="leaguePick" role="group" aria-label="League"></div>
+  <input type="search" id="teamSearch" placeholder="Search teams" aria-label="Search teams" style="margin-top:10px">
+  <div class="team-list" id="teamList" role="listbox" aria-label="Teams"></div>
+
+  <h3>When your team scores</h3>
+  <label class="switch">Sound the horn automatically <input type="checkbox" id="autoGoal"></label>
+  <label class="switch">Sound the win horn after a win <input type="checkbox" id="autoWin"></label>
+  <label class="switch" id="playHereRow">Play on this computer <input type="checkbox" id="playHere"></label>
+  <label class="switch hidden" id="playBrowserRow">Play in this browser too <input type="checkbox" id="playBrowser"></label>
+
+  <div class="field">
+    <label for="delay">TV delay: <span id="delayVal"></span> seconds</label>
+    <input type="range" id="delay" min="0" max="120" step="1">
+    <span class="hint">TV and streams run behind the live game. Set this so the scoreboard and the horn line up with what you see. Start around 30 for cable, 45 to 90 for streaming.</span>
+  </div>
+  <div class="field">
+    <label for="volume">Volume: <span id="volumeVal"></span>%</label>
+    <input type="range" id="volume" min="0" max="100" step="1">
+  </div>
+
+  <h3>Horn sounds</h3>
+  <p class="hint">Goal Horn downloads your team's horn when one is available. You can use your own MP3 instead; it stays on this computer.</p>
+  <div class="file-row"><div><strong id="goalLabel">Goal horn</strong><div class="src" id="goalSrc"></div></div><div class="row"><button class="btn quiet" type="button" data-preview="goal">Preview</button><label class="btn">Upload<input type="file" accept=".mp3,audio/mpeg" hidden data-upload="goal"></label></div></div>
+  <div class="file-row"><div><strong>Win horn</strong><div class="src" id="winSrc"></div></div><div class="row"><button class="btn quiet" type="button" data-preview="win">Preview</button><label class="btn">Upload<input type="file" accept=".mp3,audio/mpeg" hidden data-upload="win"></label></div></div>
+  <p class="hint" id="uploadMsg"></p>
+
+  <details>
+    <summary class="btn quiet" style="display:inline-block;margin-top:18px">Advanced</summary>
+    <div class="field">
+      <label for="libraryUrl">Horn library address</label>
+      <input type="url" id="libraryUrl" placeholder="https://horns.colbykordas.com">
+      <span class="hint">Where team horns are downloaded from. Leave it blank for the default.</span>
+      <div class="row"><button class="btn" type="button" id="refreshLib">Download horns again</button></div>
+    </div>
+    <div class="field" id="editorField">
+      <label for="editorPick">Edit files</label>
+      <div class="row">
+        <select id="editorPick" style="width:auto"><option value="settings.json">settings.json</option><option value="custom.css">custom.css</option></select>
+        <button class="btn" type="button" id="editorLoad">Open</button>
+      </div>
+      <textarea id="editor" class="hidden" spellcheck="false"></textarea>
+      <div class="row hidden" id="editorActions"><button class="btn primary" type="button" id="editorSave">Save file</button><span class="hint" id="editorMsg"></span></div>
+      <span class="hint">custom.css changes how these pages look. settings.json holds everything on this screen.</span>
+    </div>
+    <p class="hint" id="versionLine"></p>
+  </details>
+</aside>
+
+<!-- First run -->
+<div class="welcome hidden" id="welcome">
+  <div class="box">
+    <h1>Who do you cheer for?</h1>
+    <p>Pick your team. Goal Horn follows their games and sounds the horn when they score.</p>
+    <div class="segmented" id="wLeaguePick" role="group" aria-label="League"></div>
+    <input type="search" id="wTeamSearch" placeholder="Search teams" aria-label="Search teams" style="margin-top:10px">
+    <div class="team-list" id="wTeamList" role="listbox" aria-label="Teams"></div>
+    <div class="row" style="margin-top:18px"><button class="btn primary" type="button" id="wDone" disabled>Start</button></div>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast" role="status"></div>
+
+<script src="/shared/teams.js"></script>
+<script src="/common.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
