@@ -1,6 +1,11 @@
-# Builds the installers when you push a version tag (git tag v1.0.0 && git push --tags)
-# and attaches them to a GitHub release. Signing is optional: add the secrets below
-# when you have certificates, and the warnings on first launch go away.
+# Builds the installers when you push a version tag (git tag v1.0.1 && git push --tags)
+# and attaches them to the GitHub release for that tag.
+#
+# Code signing is off. When you have certificates, add these repository secrets and
+# the matching env lines to the "Build and upload" step:
+#   Windows: WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD
+#   Mac:     CSC_LINK, CSC_KEY_PASSWORD, APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
+# and remove CSC_IDENTITY_AUTO_DISCOVERY.
 name: Release
 
 on:
@@ -12,34 +17,46 @@ permissions:
   contents: write
 
 jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create the release if it doesn't exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$TAG" -R "$GITHUB_REPOSITORY" --title "Goal Horn ${TAG#v}" --generate-notes
+
   build:
+    needs: release
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm test
-      - name: Build and publish
+      - name: Build and upload
         run: npx electron-builder --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Windows code signing (optional)
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-          # macOS signing and notarization (optional)
-          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.MAC_CSC_LINK != '' }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make sure the release is published, not a draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${{ github.ref_name }}" -R "$GITHUB_REPOSITORY" --draft=false --latest
 
   docker:
     runs-on: ubuntu-latest
@@ -47,7 +64,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3

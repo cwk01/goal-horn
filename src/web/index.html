@@ -74,7 +74,9 @@
   <div class="team-list" id="teamList" role="listbox" aria-label="Teams"></div>
 
   <h3>When your team scores</h3>
+  <p class="hint">Press the horn yourself when you see the goal. That's the most accurate way, and each press teaches Goal Horn your TV delay.</p>
   <label class="switch">Sound the horn automatically <input type="checkbox" id="autoGoal"></label>
+  <p class="hint" style="margin-top:-8px">Scores reach Goal Horn anywhere from a few seconds to half a minute after they happen, so the automatic horn can go off early or late. Goals taken back on review can still sound it.</p>
   <label class="switch">Sound the win horn after a win <input type="checkbox" id="autoWin"></label>
   <label class="switch" id="playHereRow">Play on this computer <input type="checkbox" id="playHere"></label>
   <label class="switch hidden" id="playBrowserRow">Play in this browser too <input type="checkbox" id="playBrowser"></label>
@@ -82,8 +84,10 @@
   <div class="field">
     <label for="delay">TV delay: <span id="delayVal"></span> seconds</label>
     <input type="range" id="delay" min="0" max="120" step="1">
-    <span class="hint">TV and streams run behind the live game. Set this so the scoreboard and the horn line up with what you see. Start around 30 for cable, 45 to 90 for streaming.</span>
+    <span class="hint">How far behind the live data your TV is. The scoreboard, and the automatic horn if it's on, wait this long so they match what you see.</span>
+    <span class="hint" id="delayMeasured"></span>
   </div>
+  <label class="switch">Learn the TV delay when I press the horn <input type="checkbox" id="learnDelay"></label>
   <div class="field">
     <label for="volume">Volume: <span id="volumeVal"></span>%</label>
     <input type="range" id="volume" min="0" max="100" step="1">
@@ -121,7 +125,7 @@
 <div class="welcome hidden" id="welcome">
   <div class="box">
     <h1>Who do you cheer for?</h1>
-    <p>Pick your team. Goal Horn follows their games and sounds the horn when they score.</p>
+    <p>Pick your team. Goal Horn follows their games, and when they score you press the horn and every speaker in the house plays it.</p>
     <div class="segmented" id="wLeaguePick" role="group" aria-label="League"></div>
     <input type="search" id="wTeamSearch" placeholder="Search teams" aria-label="Search teams" style="margin-top:10px">
     <div class="team-list" id="wTeamList" role="listbox" aria-label="Teams"></div>

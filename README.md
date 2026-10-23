@@ -1,8 +1,8 @@
 # Goal Horn
 
-Goal Horn plays your team's goal horn when they score. It runs on one computer and can play the horn on that computer and on any phone, tablet, TV or other computer in the house that's on the same Wi-Fi.
+Goal Horn plays your team's goal horn on every phone, tablet, TV and computer in the house at once. It runs on one computer; the others open a web page on the same Wi-Fi.
 
-It follows NHL, AHL, PWHL, MLB and NFL teams. The horn goes off by itself when your team scores, and you can hold the scoreboard back to match your TV so the horn doesn't go off before you see the goal.
+It follows NHL, AHL, PWHL, MLB and NFL teams and shows the live score. You press the horn when your team scores, and each press teaches it how far your TV runs behind, so the scoreboard lines up with what you see. An automatic horn is there too, for when nobody's near the button.
 
 Download it at **[goalhorn.colbykordas.com](https://goalhorn.colbykordas.com)**.
 
@@ -12,7 +12,7 @@ Download it at **[goalhorn.colbykordas.com](https://goalhorn.colbykordas.com)**.
 2. Pick your team.
 3. To add a speaker, click **Speakers** and scan the code with a phone or tablet camera, or type the address into a TV's or computer's browser. Tap **Turn on sound** on that device.
 
-That's it. When your team scores, every speaker plays the horn.
+That's it. When your team scores, press the horn and every speaker plays it.
 
 ### The first time you open it
 
@@ -23,7 +23,11 @@ Goal Horn isn't signed with a paid developer certificate yet, so your computer w
 
 ### Matching your TV
 
-TV broadcasts run 20 to 60 seconds behind the live game, and streaming apps run further behind. Open **Settings** and move **TV delay** until the scoreboard changes at the same moment as your TV. The horn uses the same delay.
+Your TV runs behind the live game, by 10 to 30 seconds on cable and 30 to 90 on streaming apps, and the score data Goal Horn reads runs behind by its own amount. The **TV delay** setting is the difference between the two.
+
+You don't have to work it out. Each time you press the horn for a goal, Goal Horn finds that goal in the data and measures how long after it you pressed. It sets the delay from your last three goals, so after a goal or two the scoreboard changes when your TV does. You can turn that off and set the slider by hand under **Settings**.
+
+If you watch on more than one TV source (cable in one room, a stream in another), set it for the one you watch most.
 
 ### Speakers
 
@@ -37,7 +41,9 @@ TV broadcasts run 20 to 60 seconds behind the live game, and streaming apps run 
 
 Goal Horn downloads your team's horn from the horn library when there is one, and uses a built-in horn when there isn't. To use your own sound, open **Settings > Horn sounds** and upload an MP3. Your upload stays on your computer and is used for that team only. **Remove** goes back to the library horn.
 
-### When the horn sounds
+### The automatic horn
+
+The horn is manual out of the box. **Settings > Sound the horn automatically** turns on the automatic one, which plays after the TV delay when the data shows your team scoring:
 
 | League | Horn | Plays automatically when |
 |---|---|---|
@@ -45,9 +51,9 @@ Goal Horn downloads your team's horn from the horn library when there is one, an
 | MLB | Run horn | your team scores a run |
 | NFL | Touchdown horn | your team scores a touchdown (field goals and extra points don't sound it) |
 
-The win horn plays when the game ends and your team won. You can turn either one off in Settings, and you can always press the button yourself.
+It's less exact than pressing it yourself. Scores reach the data feeds anywhere from a few seconds to half a minute after they happen, and that varies goal to goal. A goal taken back on review can still sound it. AHL and PWHL scores come from a feed that updates less often than the NHL's.
 
-Scores for AHL and PWHL games come from a schedule feed that updates less often than the NHL's, so the horn can lag a little.
+The win horn plays on its own when the game ends and your team won. Turn that off in Settings if you'd rather press it.
 
 ## Running it without a screen
 

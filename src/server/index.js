@@ -97,6 +97,8 @@ function createGoalHorn({ dataDir, headless = false, log = console.log }) {
     log(`horn: ${label} (${origin})`);
     broadcast('play', { type, src: `/audio/${type}?v=${hornVersion}`, volume: s.volume, at: Date.now(), origin });
     if (player && s.playHere) player.play(horns[type].file, s.volume);
+    // A person pressing the goal horn is reacting to their TV: use it to measure the delay.
+    if (type === 'goal' && origin !== 'auto' && origin !== 'test') tracker.notePress(Date.now());
   }
 
   function silence() {
@@ -105,6 +107,7 @@ function createGoalHorn({ dataDir, headless = false, log = console.log }) {
   }
 
   tracker.on('horn', type => sound(type, 'auto'));
+  tracker.on('delay', d => broadcast('delay', { ...d, delay: settings.get().delay }));
 
   // ── HTTP ────────────────────────────────────────────────────────────────────
   function send(res, code, body, type = 'application/json') {

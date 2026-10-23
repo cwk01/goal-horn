@@ -15,7 +15,7 @@ leagues.NFL.next = async () => null;
 
 const { createGoalHorn } = require('../src/server');
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'goalhorn-test-'));
-fs.writeFileSync(path.join(dataDir, 'settings.json'), JSON.stringify({ delay: 0, libraryUrl: 'http://127.0.0.1:1', port: 18787, setupDone: true }));
+fs.writeFileSync(path.join(dataDir, 'settings.json'), JSON.stringify({ delay: 0, autoGoal: true, libraryUrl: 'http://127.0.0.1:1', port: 18787, setupDone: true }));
 
 function listen(base, role, name) {
   const events = [];
@@ -47,6 +47,8 @@ const until = async (fn, ms = 5000) => { const t = Date.now(); while (Date.now()
   const j = async (p, body) => (await fetch(local + p.slice(1), body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
   let pass = 0; const ok = (cond, msg) => { assert.ok(cond, msg); pass++; console.log('  ok  ' + msg); };
 
+  const fresh = new (require('../src/server/settings').Settings)(fs.mkdtempSync(path.join(os.tmpdir(), 'goalhorn-defaults-')));
+  ok(fresh.get().autoGoal === false && fresh.get().learnDelay === true, 'new installs start with the manual horn and delay learning on');
   const st = await j('/api/state');
   ok(st.settings.team === 'BOS' && st.team.name === 'Boston Bruins', 'state reports the Bruins');
   ok(st.horns.goal.source === 'built-in', 'built-in horn used when the library is unreachable');
@@ -91,6 +93,25 @@ const until = async (fn, ms = 5000) => { const t = Date.now(); while (Date.now()
   ok(shownNow === 3, 'scoreboard is held back by the TV delay');
   await wait(3200);
   ok((await j('/api/game')).game.home.score === 5, 'delayed score appears after the delay');
+  app.settings.update({ delay: 0 });
+
+  // Delay learning: the data shows a goal, and the person presses the horn 37s later.
+  app.settings.update({ delay: 0, learnDelay: true, delayMeasured: [], autoGoal: false });
+  game = fx.nhlLive(); game.id = 100; app.tracker.reset(); await app.tracker.tick();
+  game.home.score = 4; app.tracker.lastPoll = 0; await app.tracker.tick();
+  const change = app.tracker.changes[0];
+  ok(change && change.score === 4, 'score change in the live data is recorded');
+  app.tracker.notePress(change.at + 37000);
+  ok(app.settings.get().delay === 37 && app.settings.get().delayMeasured[0] === 37, 'pressing the horn 37s after the data sets the delay to 37s');
+  game.home.score = 5; app.tracker.lastPoll = 0; await app.tracker.tick();
+  app.tracker.notePress(app.tracker.changes[1].at + 41000);
+  ok(app.settings.get().delay === 39, 'second goal averages the delay (37 and 41 make 39)');
+  app.tracker.notePress(Date.now() - 400000);
+  ok(app.settings.get().delay === 39, 'a press with no matching goal changes nothing');
+  app.settings.update({ learnDelay: false, delayMeasured: [] });
+  game.home.score = 6; app.tracker.lastPoll = 0; await app.tracker.tick();
+  app.tracker.notePress(app.tracker.changes[2].at + 10000);
+  ok(app.settings.get().delay === 39, 'with learning off the delay stays where it was');
   app.settings.update({ delay: 0 });
 
   // Upload a team horn, then remove it.

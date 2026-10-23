@@ -1,10 +1,14 @@
 {
   "name": "goal-horn",
   "productName": "Goal Horn",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Plays your team's goal horn when they score, on this computer and on any phone, tablet or TV in the house.",
   "main": "src/main.js",
-  "author": "Colby Kordas",
+  "author": {
+    "name": "Colby Kordas",
+    "email": "cwk01@users.noreply.github.com",
+    "url": "https://colbykordas.com"
+  },
   "license": "MIT",
   "homepage": "https://goalhorn.colbykordas.com",
   "repository": {
@@ -74,12 +78,14 @@
       ],
       "category": "AudioVideo",
       "icon": "build/icon.png",
-      "syncDesktopName": true
+      "syncDesktopName": true,
+      "maintainer": "Colby Kordas <cwk01@users.noreply.github.com>"
     },
     "publish": {
       "provider": "github",
       "owner": "cwk01",
-      "repo": "goal-horn"
+      "repo": "goal-horn",
+      "releaseType": "release"
     }
   },
   "desktopName": "goal-horn.desktop"

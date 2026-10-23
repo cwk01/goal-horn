@@ -33,6 +33,11 @@ function applyState(state) {
   $('goalLabel').textContent = lg.horn + ' horn';
   $('autoGoal').checked = S.settings.autoGoal;
   $('autoWin').checked = S.settings.autoWin;
+  $('learnDelay').checked = S.settings.learnDelay;
+  const m = S.settings.delayMeasured || [];
+  $('delayMeasured').textContent = m.length
+    ? 'Measured from your last ' + plural(m.length, 'horn press') + ': ' + m.join(', ') + ' seconds.'
+    : 'Not measured yet. Press the horn when you see your team score and Goal Horn will set this for you.';
   $('playHere').checked = S.settings.playHere;
   $('playBrowser').checked = playBrowser();
   $('delay').value = S.settings.delay; $('delayVal').textContent = S.settings.delay;
@@ -271,6 +276,7 @@ $('speakerList').onclick = e => { const b = e.target.closest('[data-test]'); if 
 
 $('autoGoal').onchange = e => saveSetting({ autoGoal: e.target.checked });
 $('autoWin').onchange = e => saveSetting({ autoWin: e.target.checked });
+$('learnDelay').onchange = e => saveSetting({ learnDelay: e.target.checked });
 $('playHere').onchange = e => saveSetting({ playHere: e.target.checked });
 $('playBrowser').onchange = e => {
   localStorage.setItem('gh.playBrowser', e.target.checked ? '1' : '0');
@@ -326,6 +332,12 @@ $('editorSave').onclick = async () => {
     speakers: renderSpeakers,
     state: applyState,
     horns: renderHorns,
+    delay: d => {
+      if (d.tvAhead) toast('Your TV is ahead of the live data by ' + -d.average + ' seconds, so the scoreboard can\'t run behind it. Delay set to 0.');
+      else if (d.applied !== null) toast('TV delay set to ' + d.applied + ' seconds from your horn press.');
+      else toast('Your TV looks about ' + d.average + ' seconds behind the live data.');
+      api('/api/state').then(applyState).catch(() => {});
+    },
   });
   pollGame();
   setInterval(pollGame, 5000);
