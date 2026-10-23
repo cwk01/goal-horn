@@ -75,7 +75,7 @@ It prints the control and speaker addresses when it starts.
 
 ## The horn library
 
-The default library is `https://horns.colbykordas.com`. Files are laid out as:
+The default library is `https://goalhorn.colbykordas.com/horns`. Files are laid out as:
 
 ```
 /<LEAGUE>/<TEAM>/goal.mp3      /NHL/BOS/goal.mp3
@@ -117,6 +117,7 @@ Layout:
 - `src/server/tracker.js`: polls the game, applies the TV delay, decides when to sound the horn
 - `src/web/`: control page and speaker page
 - `site/`: the download page
+- `functions/horns/`: serves the horn library on the download site from a Cloudflare R2 bucket (`wrangler.toml` binds it)
 
 Releases build on GitHub Actions when you push a tag like `v1.0.1`. The workflow takes optional signing secrets (`WIN_CSC_LINK`, `MAC_CSC_LINK`, `APPLE_ID` and friends) and builds unsigned installers without them.
 

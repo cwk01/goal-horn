@@ -3,7 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const { LEAGUES, findTeam } = require('../shared/teams');
 
-const DEFAULT_LIBRARY_URL = 'https://horns.colbykordas.com';
+const DEFAULT_LIBRARY_URL = 'https://goalhorn.colbykordas.com/horns';
+// Where the library used to be. Settings saved with it move to the new address.
+const OLD_LIBRARY_URLS = ['https://horns.colbykordas.com'];
 
 const DEFAULTS = {
   league: 'NHL',
@@ -54,7 +56,7 @@ class Settings {
     for (const k of ['autoGoal', 'autoWin', 'learnDelay', 'playHere', 'setupDone']) out[k] = !!out[k];
     out.delayMeasured = Array.isArray(out.delayMeasured) ? out.delayMeasured.filter(Number.isFinite).slice(-3) : [];
     const u = String(out.libraryUrl || '').trim().replace(/\/+$/, '');
-    out.libraryUrl = /^https?:\/\//i.test(u) ? u : DEFAULT_LIBRARY_URL;
+    out.libraryUrl = /^https?:\/\//i.test(u) && !OLD_LIBRARY_URLS.includes(u.toLowerCase()) ? u : DEFAULT_LIBRARY_URL;
     if (!out.teamHorns || typeof out.teamHorns !== 'object') out.teamHorns = {};
     return out;
   }

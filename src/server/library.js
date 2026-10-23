@@ -1,6 +1,6 @@
 // Horn library.
 //
-// Online layout (default https://horns.colbykordas.com):
+// Online layout (default https://goalhorn.colbykordas.com/horns):
 //   /<LEAGUE>/<TEAM>/goal.mp3   e.g. /NHL/BOS/goal.mp3
 //   /<LEAGUE>/<TEAM>/win.mp3
 //   /_generic/<sport>/goal.mp3  sport = hockey | baseball | football

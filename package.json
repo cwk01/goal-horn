@@ -1,7 +1,7 @@
 {
   "name": "goal-horn",
   "productName": "Goal Horn",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Plays your team's goal horn when they score, on this computer and on any phone, tablet or TV in the house.",
   "main": "src/main.js",
   "author": {

@@ -1,0 +1,9 @@
+# Cloudflare Pages settings for the download site (goalhorn.colbykordas.com).
+# The site is in site/, and functions/horns serves the horn library from R2.
+name = "goal-horn"
+pages_build_output_dir = "site"
+compatibility_date = "2026-10-01"
+
+[[r2_buckets]]
+binding = "HORNS"
+bucket_name = "goal-horns"
