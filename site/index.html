@@ -86,8 +86,8 @@ footer { color: var(--muted); font-size: 15px; padding: 30px 0 50px; border-top:
       </div>
     </div>
     <div class="press">
-      <button class="horn" id="horn" type="button" aria-label="Play the sample horn">GOAL</button>
-      <span class="hint">Press it. This is the horn Goal Horn ships with.</span>
+      <button class="horn" id="horn" type="button" aria-label="Play the Boston Bruins goal horn">GOAL</button>
+      <span class="hint">Press it. That's the Boston Bruins goal horn.</span>
     </div>
   </section>
 
@@ -115,7 +115,7 @@ footer { color: var(--muted); font-size: 15px; padding: 30px 0 50px; border-top:
     Goal Horn is made by <a href="https://colbykordas.com">Colby Kordas</a> and released under the MIT license. Not affiliated with any league or team. Scores come from each league's public data.
   </footer>
 </div>
-<audio id="sample" src="default-goal.mp3" preload="auto"></audio>
+<audio id="sample" src="https://horns.colbykordas.com/NHL/BOS/goal.mp3" preload="auto"></audio>
 <script>
   const ua = navigator.userAgent, p = document.getElementById('primary'), s = document.getElementById('secondary');
   if (/Mac/.test(ua) && !/iPhone|iPad/.test(ua)) {
@@ -123,9 +123,29 @@ footer { color: var(--muted); font-size: 15px; padding: 30px 0 50px; border-top:
     [p.href, s.href] = [s.href, p.href];
   }
   const horn = document.getElementById('horn'), audio = document.getElementById('sample');
-  horn.onclick = () => { audio.currentTime = 0; audio.play(); };
-  audio.onplay = () => horn.classList.add('on');
+  // The library file is the horn followed by the goal song; play only the horn.
+  const HORN_ENDS = 7.4, FADE = 0.4;
+  let stopTimer = null, fadeTimer = null;
+  function stop() { clearTimeout(stopTimer); clearInterval(fadeTimer); audio.pause(); audio.volume = 1; }
+  horn.onclick = () => {
+    stop();
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  };
+  audio.onplaying = () => {
+    horn.classList.add('on');
+    if (audio.src.endsWith('default-goal.mp3')) return;
+    clearTimeout(stopTimer);
+    stopTimer = setTimeout(() => {
+      fadeTimer = setInterval(() => {
+        audio.volume = Math.max(0, audio.volume - 0.1);
+        if (audio.volume === 0) stop();
+      }, FADE * 100);
+    }, Math.max(0, (HORN_ENDS - FADE - audio.currentTime) * 1000));
+  };
   audio.onended = audio.onpause = () => horn.classList.remove('on');
+  // If the horn library can't be reached, use the horn the app ships with.
+  audio.onerror = () => { if (!audio.src.endsWith('default-goal.mp3')) audio.src = 'default-goal.mp3'; };
 </script>
 </body>
 </html>
