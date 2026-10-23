@@ -36,6 +36,7 @@ If you watch on more than one TV source (cable in one room, a stream in another)
 - Phones stop listening when the screen locks. Plug the phone in and leave the speaker page open; Goal Horn asks the phone to keep the screen on.
 - Name each speaker so you can tell them apart in the **Speakers** list, and use **Test** to check one.
 - The control page works from a phone too. Open the address without `/speaker` at the end to get the horn button and settings.
+- Speakers find Goal Horn by the computer's name (like `http://colbys-pc.local:8787`) and fall back to its IP address. If the router gives the computer a new IP address mid-game, open speakers find it again within about 10 seconds and keep their sound on. The QR code uses the IP address, and the page moves to the name on its own when the device can reach it, so bookmarks keep working. If your router has its own name for the computer, set `GOAL_HORN_NAME` to it.
 
 ### Horn sounds
 

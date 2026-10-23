@@ -10,6 +10,7 @@ const http = require('http');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const crypto = require('crypto');
 const QRCode = require('qrcode');
 const { Settings } = require('./settings');
 const { Library, key } = require('./library');
@@ -33,6 +34,29 @@ function lanAddresses() {
   return out.sort((a, b) => rank(a) - rank(b));
 }
 
+// The names other devices can use to reach this computer. Router-assigned IP addresses
+// change; the computer's name doesn't, so pages try the name first and fall back to the IP.
+// <name>.local is answered by the computer itself (Bonjour on Mac, mDNS on Windows 10+,
+// Avahi on Linux). Set GOAL_HORN_NAME to use a different name, such as one your router's DNS knows.
+function hostNames() {
+  const custom = String(process.env.GOAL_HORN_NAME || '').trim().toLowerCase();
+  if (custom) return [custom];
+  const h = os.hostname().trim().toLowerCase().replace(/\.$/, '');
+  // Docker gives containers a random 12-character ID as the hostname; nobody can resolve that.
+  if (!h || h === 'localhost' || /^[0-9a-f]{12}$/.test(h) || !/^[a-z0-9][a-z0-9.-]*$/.test(h)) return [];
+  const label = h.split('.')[0];
+  const out = [label + '.local'];
+  if (h.includes('.') && !h.endsWith('.local')) out.push(h);
+  return out;
+}
+
+// Pages loaded from any address on the home network may call the API, so a page
+// keeps working after it switches to this computer's new address.
+function isPrivateHost(host) {
+  return host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host.endsWith('.local') || !host.includes('.') ||
+    /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.)/.test(host) || hostNames().includes(host);
+}
+
 function isLocal(req) {
   const ip = req.socket.remoteAddress || '';
   return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
@@ -45,6 +69,12 @@ function createGoalHorn({ dataDir, headless = false, log = console.log }) {
   const player = headless ? new Player(log) : null;
   const customCss = path.join(dataDir, 'custom.css');
   if (!fs.existsSync(customCss)) fs.writeFileSync(customCss, '/* Your own styles. Edit from Settings > Advanced > Edit files. */\n');
+
+  // Lets a page check it found this Goal Horn and not another one in the house.
+  const idFile = path.join(dataDir, 'instance-id');
+  let instanceId = '';
+  try { instanceId = fs.readFileSync(idFile, 'utf8').trim(); } catch (e) {}
+  if (!instanceId) { instanceId = crypto.randomUUID(); fs.writeFileSync(idFile, instanceId); }
 
   let horns = {};
   let hornVersion = Date.now();
@@ -138,8 +168,18 @@ function createGoalHorn({ dataDir, headless = false, log = console.log }) {
     return buf.length ? JSON.parse(buf.toString('utf8')) : {};
   }
 
+  // Name first, then IP addresses.
+  function home() {
+    return {
+      id: instanceId,
+      names: hostNames().map(h => `http://${h}:${port}`),
+      ips: lanAddresses().map(ip => `http://${ip}:${port}`),
+    };
+  }
+
   function speakerUrls() {
-    return lanAddresses().map(ip => `http://${ip}:${port}/speaker`);
+    const h = home();
+    return [...h.names, ...h.ips].map(b => b + '/speaker');
   }
 
   function state() {
@@ -147,7 +187,7 @@ function createGoalHorn({ dataDir, headless = false, log = console.log }) {
     const { teamHorns, ...pub } = s;
     return {
       version: pkg.version, settings: pub, league: LEAGUES[s.league], team: findTeam(s.league, s.team),
-      horns: hornInfo(), speakers: speakers(), speakerUrls: speakerUrls(), headless,
+      horns: hornInfo(), speakers: speakers(), speakerUrls: speakerUrls(), home: home(), headless,
       soundCard: player ? player.available : null, error: tracker.error,
     };
   }
@@ -156,6 +196,22 @@ function createGoalHorn({ dataDir, headless = false, log = console.log }) {
     const url = new URL(req.url, 'http://x');
     const p = url.pathname;
     const method = req.method;
+
+    const origin = req.headers.origin;
+    if (origin) {
+      let o = null; try { o = new URL(origin); } catch (e) {}
+      if (o && o.protocol === 'http:' && Number(o.port || 80) === port && isPrivateHost(o.hostname)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
+        res.setHeader('Vary', 'Origin');
+      }
+    }
+    if (method === 'OPTIONS') { res.writeHead(204); return res.end(); }
+    if (p === '/api/ping' && method === 'GET') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return send(res, 200, { app: 'goal-horn', id: instanceId });
+    }
 
     // Pages and static files
     if (method === 'GET' && (p === '/' || p === '/index.html')) return sendFile(res, path.join(WEB, 'index.html'));
@@ -246,7 +302,9 @@ function createGoalHorn({ dataDir, headless = false, log = console.log }) {
     if (p === '/api/horns/refresh' && method === 'POST') { await syncHorns(true); return send(res, 200, state()); }
 
     if (p === '/api/qr' && method === 'GET') {
-      const target = url.searchParams.get('url') || speakerUrls()[0] || `http://localhost:${port}/speaker`;
+      // The IP address works on every phone; the speaker page moves itself to the name if that works too.
+      const ip = home().ips[0];
+      const target = url.searchParams.get('url') || (ip ? ip + '/speaker' : speakerUrls()[0]) || `http://localhost:${port}/speaker`;
       const svg = await QRCode.toString(target, { type: 'svg', margin: 1, color: { dark: '#000000', light: '#ffffff' } });
       return send(res, 200, svg, 'image/svg+xml');
     }
@@ -315,4 +373,4 @@ function createGoalHorn({ dataDir, headless = false, log = console.log }) {
   };
 }
 
-module.exports = { createGoalHorn, lanAddresses };
+module.exports = { createGoalHorn, lanAddresses, hostNames };

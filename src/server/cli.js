@@ -17,8 +17,9 @@ if (opt('--port')) app.settings.update({ port: Number(opt('--port')) });
 
 app.start().then(({ local, speakerUrls }) => {
   console.log('Goal Horn is running.');
-  console.log('  Control page:  ' + (speakerUrls[0] ? speakerUrls[0].replace(/\/speaker$/, '/') : local));
-  console.log('  Speaker page:  ' + (speakerUrls[0] || local + 'speaker'));
+  const urls = speakerUrls.length ? speakerUrls : [local + 'speaker'];
+  console.log('  Control page:  ' + urls.map(u => u.replace(/\/speaker$/, '/')).join('  or  '));
+  console.log('  Speaker page:  ' + urls.join('  or  '));
   console.log('  Settings in:   ' + dataDir);
 }).catch(e => { console.error(e.message); process.exit(1); });
 

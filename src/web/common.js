@@ -1,5 +1,85 @@
 // Shared by the control page and the speaker page.
 
+// ── Finding Goal Horn ─────────────────────────────────────────────────────────
+// The router can give the computer running Goal Horn a new IP address at any time,
+// so pages reach it by the computer's name when that works and fall back to its IP
+// addresses. A page opened at an IP address moves to the name before sound is turned
+// on, so bookmarks keep working. If the connection drops later, the page tries every
+// address it knows and carries on at whichever answers, without reloading, so a
+// speaker keeps its sound on.
+// Settings saved on this device (speaker name, volume) belong to the address the page
+// was opened at, so they ride along in the URL when the page moves to the name.
+function carryOut() {
+  const keep = {};
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('gh.') && k !== 'gh.home') keep[k] = localStorage.getItem(k); } } catch (e) {}
+  return 'gh-carry=' + encodeURIComponent(JSON.stringify(keep));
+}
+if (location.hash.startsWith('#gh-carry=')) {
+  try {
+    const keep = JSON.parse(decodeURIComponent(location.hash.slice(10)));
+    for (const [k, v] of Object.entries(keep)) if (k.startsWith('gh.') && localStorage.getItem(k) === null) localStorage.setItem(k, String(v));
+  } catch (e) {}
+  history.replaceState(null, '', location.pathname + location.search);
+}
+
+const Home = {
+  base: '',          // '' means the address this page was opened from
+  id: null,
+  names: [], ips: [],
+
+  at(p) { return this.base + p; },
+  here() { return this.base || location.origin; },
+  onComputer() { return ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname); },
+  onIp() { return /^\d+\.\d+\.\d+\.\d+$/.test(location.hostname); },
+
+  learn(h) {
+    if (!h) return;
+    this.id = h.id || this.id;
+    this.names = h.names || [];
+    this.ips = h.ips || [];
+    try { localStorage.setItem('gh.home', JSON.stringify({ id: this.id, names: this.names, ips: this.ips })); } catch (e) {}
+  },
+
+  remembered() {
+    try { const h = JSON.parse(localStorage.getItem('gh.home') || 'null'); if (h && !this.id) this.learn(h); } catch (e) {}
+  },
+
+  async ping(base, ms = 3000) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), ms);
+    try {
+      const r = await fetch(base + '/api/ping', { cache: 'no-store', signal: ctl.signal });
+      const d = await r.json();
+      return d.app === 'goal-horn' && (!this.id || d.id === this.id);
+    } catch (e) { return false; } finally { clearTimeout(timer); }
+  },
+
+  use(base) { this.base = base === location.origin ? '' : base; },
+
+  // Opened at an IP address and the name answers: reload at the name if nothing would be
+  // lost (sound not turned on yet), otherwise just send requests to the name from now on.
+  async preferName(canReload) {
+    if (this.onComputer() || !this.onIp()) return;
+    for (const b of this.names) {
+      if (!(await this.ping(b))) continue;
+      if (canReload()) location.replace(b + location.pathname + location.search + '#' + carryOut());
+      else this.use(b);
+      return;
+    }
+  },
+
+  // The connection dropped: find Goal Horn again, name first.
+  async find() {
+    this.remembered();
+    const tried = new Set();
+    for (const b of [...this.names, location.origin, ...this.ips]) {
+      if (tried.has(b)) continue; tried.add(b);
+      if (await this.ping(b)) { this.use(b); return true; }
+    }
+    return false;
+  },
+};
+
 // ── Audio ─────────────────────────────────────────────────────────────────────
 // Web Audio instead of <audio>: once the context is unlocked by a tap, phones and
 // TVs will play every later horn without asking again.
@@ -20,7 +100,7 @@ const Horn = {
   async load(type, src) {
     if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     if (this.srcs[type] === src && this.buffers[type]) return;
-    const res = await fetch(src);
+    const res = await fetch(Home.at(src));
     if (!res.ok) throw new Error('Could not load the ' + type + ' horn');
     const data = await res.arrayBuffer();
     this.buffers[type] = await new Promise((ok, bad) => this.ctx.decodeAudioData(data, ok, bad));
@@ -49,14 +129,24 @@ const Horn = {
 
 // ── Live channel ──────────────────────────────────────────────────────────────
 function connectLive(role, name, handlers) {
-  let es = null, id = null;
+  let es = null, id = null, searching = null;
   const open = () => {
     const q = new URLSearchParams({ role, name: name || '' });
-    es = new EventSource('/events?' + q);
+    es = new EventSource(Home.at('/events?' + q));
     for (const [ev, fn] of Object.entries(handlers)) {
       es.addEventListener(ev, e => { const d = JSON.parse(e.data); if (ev === 'hello') id = d.id; fn(d); });
     }
-    es.onerror = () => handlers.offline && handlers.offline();
+    es.onopen = () => { clearInterval(searching); searching = null; };
+    es.onerror = () => {
+      handlers.offline && handlers.offline();
+      // The browser keeps retrying the same address. If that hasn't worked in 10 seconds,
+      // look for Goal Horn at its other addresses.
+      if (!searching) searching = setInterval(async () => {
+        if (es.readyState === EventSource.OPEN) return;
+        const was = Home.here();
+        if (await Home.find() && Home.here() !== was) { es.close(); open(); }
+      }, 10000);
+    };
   };
   open();
   return {
@@ -70,7 +160,7 @@ async function api(path, opts = {}) {
   const init = { method: opts.method || (opts.body !== undefined ? 'POST' : 'GET'), headers: {} };
   if (opts.body instanceof Blob || opts.body instanceof ArrayBuffer) init.body = opts.body;
   else if (opts.body !== undefined) { init.body = JSON.stringify(opts.body); init.headers['Content-Type'] = 'application/json'; }
-  const res = await fetch(path, init);
+  const res = await fetch(Home.at(path), init);
   const ct = res.headers.get('content-type') || '';
   const data = ct.includes('json') ? await res.json() : await res.text();
   if (!res.ok) throw new Error((data && data.error) || 'Request failed (' + res.status + ')');

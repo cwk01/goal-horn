@@ -58,6 +58,7 @@ async function loadTeam() {
     $('teamName').textContent = s.team ? s.team.name : 'Goal Horn';
     document.title = (s.team ? s.team.name + ' ' : '') + 'speaker';
     horns = s.horns;
+    Home.learn(s.home);
   } catch (e) {}
 }
 
@@ -68,16 +69,19 @@ $('name').onchange = e => { localStorage.setItem('gh.speakerName', e.target.valu
 $('vol').value = volume(); $('volVal').textContent = volume();
 $('vol').oninput = e => { localStorage.setItem('gh.myVolume', e.target.value); $('volVal').textContent = e.target.value; };
 
-loadTeam();
-live = connectLive('speaker', savedName(), {
-  hello: d => {
-    horns = d.horns;
-    if (offline) { offline = false; if (enabled) setState('Ready. Leave this page open.', 'Reconnected.'); }
-    reportReady();
-  },
-  play: onPlay,
-  stop: () => Horn.stop(),
-  horns: h => { horns = h; if (enabled) for (const t of ['goal', 'win']) Horn.load(t, h[t].src).catch(() => {}); },
-  state: s => { applyTeamColor(s.team); $('teamName').textContent = s.team ? s.team.name : 'Goal Horn'; },
-  offline: () => { offline = true; setState('Lost the connection to Goal Horn.', 'Trying again. Make sure the computer running Goal Horn is on and on the same Wi-Fi.'); },
-});
+(async function start() {
+  await loadTeam();
+  live = connectLive('speaker', savedName(), {
+    hello: d => {
+      horns = d.horns;
+      if (offline) { offline = false; if (enabled) setState('Ready. Leave this page open.', 'Reconnected.'); }
+      reportReady();
+    },
+    play: onPlay,
+    stop: () => Horn.stop(),
+    horns: h => { horns = h; if (enabled) for (const t of ['goal', 'win']) Horn.load(t, h[t].src).catch(() => {}); },
+    state: s => { applyTeamColor(s.team); $('teamName').textContent = s.team ? s.team.name : 'Goal Horn'; },
+    offline: () => { offline = true; setState('Lost the connection to Goal Horn.', 'Trying again. Make sure the computer running Goal Horn is on and on the same Wi-Fi.'); },
+  });
+  Home.preferName(() => !enabled);
+})();

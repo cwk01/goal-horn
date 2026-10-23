@@ -50,7 +50,10 @@ function applyState(state) {
   if (S.headless && S.soundCard === false) $('playHereRow').title = 'No audio player found. Install mpg123.';
   renderHorns(S.horns);
   renderSpeakers(S.speakers);
-  $('speakerUrl').textContent = S.speakerUrls[0] || 'No network connection found. Connect this computer to Wi-Fi or a network cable.';
+  const h = S.home || { names: [], ips: [] };
+  const name = h.names[0], ip = h.ips[0];
+  $('speakerUrl').textContent = !ip ? 'No network connection found. Connect this computer to Wi-Fi or a network cable.'
+    : name ? name + '/speaker  (or ' + ip + '/speaker)' : ip + '/speaker';
   pickLeague = S.settings.league;
   renderPicker('leaguePick', 'teamSearch', 'teamList', S.settings.team, saveTeam);
   if (!S.settings.setupDone && onThisComputer) openWelcome();
@@ -257,7 +260,7 @@ async function pollGame() {
 function openDrawer(id) {
   document.querySelector('.scrim').classList.remove('hidden');
   $(id).classList.remove('hidden');
-  if (id === 'speakersDrawer') $('qr').innerHTML = `<img src="/api/qr?v=${Date.now()}" alt="QR code for the speaker page">`;
+  if (id === 'speakersDrawer') $('qr').innerHTML = `<img src="${Home.at('/api/qr')}?v=${Date.now()}" alt="QR code for the speaker page">`;
 }
 function closeDrawers() {
   document.querySelector('.scrim').classList.add('hidden');
@@ -325,6 +328,7 @@ $('editorSave').onclick = async () => {
 (async function start() {
   try { applyState(await api('/api/state')); }
   catch (e) { $('notice').textContent = 'Goal Horn is not responding. Is the app still running?'; return; }
+  Home.learn(S.home);
   live = connectLive(myRole(), myName(), {
     hello: d => renderHorns(d.horns),
     play: onPlay,
@@ -341,4 +345,5 @@ $('editorSave').onclick = async () => {
   });
   pollGame();
   setInterval(pollGame, 5000);
+  Home.preferName(() => !Horn.unlocked());
 })();
