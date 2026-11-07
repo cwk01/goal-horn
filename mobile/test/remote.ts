@@ -51,9 +51,12 @@ const ok = (cond: unknown, msg: string) => { assert.ok(cond, msg); pass++; conso
   const app = createGoalHorn({ dataDir, log: () => {} });
   const { port } = await app.start();
 
-  const f = await tryAddress(`127.0.0.1:${port}`);
+  const f = (await tryAddress(`127.0.0.1:${port}`)).found;
   ok(f && f.id.length > 10, 'phone finds the computer by typed address');
-  ok(await tryAddress('127.0.0.1:1') === null, 'a wrong address finds nothing');
+  const miss = await tryAddress('127.0.0.1:1');
+  ok(miss.found === null && miss.tried.length === 1 && miss.tried[0].error.length > 0, `a wrong address finds nothing and says why (${miss.tried[0]?.error})`);
+  const full = (await tryAddress(`http://127.0.0.1:${port}/speaker`)).found;
+  ok(full?.id === f?.id, 'the full speaker address from the QR code works too');
 
   // Network scan finds it (the server listens on every address, so 127.0.0.x all answer).
   const progress: number[] = [];

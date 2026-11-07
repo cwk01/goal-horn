@@ -33,12 +33,51 @@ async function getJSON(url: string, ms: number, init?: RequestInit): Promise<any
 }
 
 export async function ping(base: string, ms = 1500): Promise<string | null> {
-  try {
-    const j = await getJSON(base.replace(/\/+$/, '') + '/api/ping', ms);
-    return j && j.app === 'goal-horn' ? String(j.id || '') : null;
-  } catch (e) {
-    return null;
-  }
+  return (await probe(base, ms)).id;
+}
+
+// Same as fetch-based getJSON, over plain XMLHttpRequest. Used as a second try so a
+// failure in one networking path on the phone doesn't hide the computer.
+function xhrJSON(url: string, ms: number): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    const timer = setTimeout(() => { try { x.abort(); } catch (e) { /* done */ } reject(new Error('timed out')); }, ms);
+    x.onreadystatechange = () => {
+      if (x.readyState !== 4) return;
+      clearTimeout(timer);
+      if (!x.status) return reject(new Error('no response'));
+      if (x.status < 200 || x.status >= 300) return reject(new Error('HTTP ' + x.status));
+      try { resolve(JSON.parse(x.responseText)); } catch (e) { reject(new Error('not Goal Horn (bad reply)')); }
+    };
+    x.onerror = () => { clearTimeout(timer); reject(new Error('network error')); };
+    x.open('GET', url);
+    x.setRequestHeader('Accept', 'application/json');
+    x.send();
+  });
+}
+
+const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+// Asks one address whether it's Goal Horn, over fetch and plain XHR at the same time,
+// so a problem in one networking path on the phone doesn't hide the computer.
+// Returns its id, or why not.
+export async function probe(base: string, ms = 1500): Promise<{ id: string | null; error: string }> {
+  const url = base.replace(/\/+$/, '') + '/api/ping';
+  const check = (j: any) => {
+    if (j && j.app === 'goal-horn') return String(j.id || '');
+    throw new Error('answered, but not as Goal Horn');
+  };
+  const tries = [getJSON(url, ms).then(check)];
+  if (typeof XMLHttpRequest !== 'undefined') tries.push(xhrJSON(url, ms).then(check));
+  // First success wins; otherwise report each path's error.
+  return new Promise(resolve => {
+    let left = tries.length;
+    const errors: string[] = [];
+    tries.forEach((t, i) => t.then(
+      id => resolve({ id, error: '' }),
+      e => { errors[i] = msg(e); if (--left === 0) resolve({ id: null, error: [...new Set(errors)].join('; other try: ') }); },
+    ));
+  });
 }
 
 // Reads the computer's details once it has answered a ping.
@@ -68,12 +107,30 @@ export function candidates(typed: string): string[] {
   return PORTS.map(p => `http://${host}:${p}`);
 }
 
-export async function tryAddress(typed: string): Promise<Found | null> {
-  for (const base of candidates(typed)) {
-    const id = await ping(base, 2500);
-    if (id) return describe(base, id);
+export interface TryResult { found: Found | null; tried: { url: string; error: string }[] }
+
+export async function tryAddress(typed: string): Promise<TryResult> {
+  const tried: { url: string; error: string }[] = [];
+  const list = candidates(typed);
+  if (!list.length) return { found: null, tried: [{ url: typed, error: "that isn't an address" }] };
+  for (const base of list) {
+    const r = await probe(base, 3000);
+    if (r.id) return { found: await describe(base, r.id), tried };
+    tried.push({ url: base, error: r.error });
   }
-  return null;
+  return { found: null, tried };
+}
+
+// What the phone thinks its network is, for error messages.
+export async function phoneInfo(): Promise<string> {
+  try {
+    const Network = require('expo-network') as typeof import('expo-network');
+    const [st, ip] = await Promise.all([Network.getNetworkStateAsync().catch(() => null), Network.getIpAddressAsync().catch(() => '')]);
+    const type = st?.type ? String(st.type).toLowerCase() : 'unknown';
+    return `This phone: ${ip || 'no address'} on ${type}${st?.type === Network.NetworkStateType.VPN ? ' (a VPN can send the app around your Wi-Fi)' : ''}.`;
+  } catch (e) {
+    return '';
+  }
 }
 
 export function sameSubnet(ip: string): string | null {
@@ -98,6 +155,9 @@ async function phoneNetwork(): Promise<string> {
   // Loaded here so the rest of this file also runs in Node tests.
   const Network = require('expo-network') as typeof import('expo-network');
   const state = await Network.getNetworkStateAsync().catch(() => null);
+  if (state && state.type === Network.NetworkStateType.VPN) {
+    throw new Error("This phone is on a VPN, so it can't scan your Wi-Fi. Turn the VPN off, or type the computer's address below.");
+  }
   if (state && state.type !== Network.NetworkStateType.WIFI && state.type !== Network.NetworkStateType.ETHERNET) {
     throw new Error("This phone isn't on Wi-Fi. Connect it to the same Wi-Fi as the computer.");
   }

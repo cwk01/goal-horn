@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { scan, tryAddress, type Found, type ScanProgress } from '../discover';
+import { phoneInfo, scan, tryAddress, type Found, type ScanProgress } from '../discover';
 import type { HornSource, HornType, Resolved } from '../library';
 import type { LinkStatus } from '../remote';
 import { DEFAULT_LIBRARY_URL, type Settings } from '../settings';
@@ -184,7 +184,7 @@ function Computer(p: Props & { name: string; setName: (v: string) => void }) {
       });
       if (list.length) setMsg(list.length === 1 ? 'Found 1 computer. Tap Join.' : `Found ${list.length} computers. Tap Join on yours.`);
       else if (run.cancelled && !p.visible) setMsg('');
-      else setMsg(`${run.cancelled ? 'Stopped. ' : ''}No Goal Horn computer answered on ${net || 'this Wi-Fi'}. Check that Goal Horn is open on the computer and that the phone is on the same Wi-Fi. On Windows, Goal Horn has to be allowed through the firewall on private networks. You can also type the address shown under Speakers on the computer.`);
+      else setMsg(`${run.cancelled ? 'Stopped. ' : ''}${await phoneInfo()}\nNo Goal Horn computer answered on ${net || 'this Wi-Fi'}. Check that Goal Horn is open on the computer and that the phone is on the same Wi-Fi. On Windows, Goal Horn has to be allowed through the firewall on private networks. You can also type the address shown under Speakers on the computer.`);
     } catch (e: any) {
       setMsg(e?.message || String(e));
     } finally {
@@ -197,11 +197,11 @@ function Computer(p: Props & { name: string; setName: (v: string) => void }) {
   const connect = async () => {
     if (!addr.trim()) { setMsg("Type the computer's address first, like 192.168.4.20."); return; }
     setBusy(true); setMsg(`Trying ${addr.trim()}`);
-    const f = await tryAddress(addr).catch(() => null);
+    const r = await tryAddress(addr).catch(e => ({ found: null, tried: [{ url: addr.trim(), error: String(e?.message || e) }] }));
+    const me = r.found ? '' : await phoneInfo();
     setBusy(false);
-    setMsg('');
-    if (f) p.onJoin(f);
-    else setMsg(`Nothing answered at ${addr.trim()}. Goal Horn uses port 8787; the address is under Speakers on the computer.`);
+    if (r.found) { setMsg(''); p.onJoin(r.found); return; }
+    setMsg(`Couldn't reach Goal Horn at ${addr.trim()}.\n${r.tried.map(t => `${t.url.replace(/^http:\/\//, '')}: ${t.error}`).join('\n')}\n${me}\nIf Chrome on this phone opens the speaker page at that address, send me these lines.`);
   };
 
   const statusText = !p.link ? '' : p.link.status === 'connected' ? `Connected to ${joined?.label}` : p.link.status === 'connecting' ? `Connecting to ${joined?.label}` : p.link.problem;
