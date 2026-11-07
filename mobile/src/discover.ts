@@ -11,15 +11,24 @@ export interface Found {
   urls: string[];      // every address the computer says it can be reached at
 }
 
+// Gives up after `ms` even if the request itself doesn't stop. Android doesn't always
+// cancel a request to an address with nothing at it right away.
 async function getJSON(url: string, ms: number, init?: RequestInit): Promise<any> {
   const ctl = new AbortController();
-  const t = setTimeout(() => ctl.abort(), ms);
-  try {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => { ctl.abort(); reject(new Error('timed out')); }, ms);
+  });
+  const work = (async () => {
     const res = await fetch(url, { ...init, signal: ctl.signal, headers: { Accept: 'application/json', ...(init?.headers || {}) } });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    return await res.json();
+    return res.json();
+  })();
+  work.catch(() => {}); // a late failure after the timeout is not an error
+  try {
+    return await Promise.race([work, timeout]);
   } finally {
-    clearTimeout(t);
+    clearTimeout(timer);
   }
 }
 
@@ -73,32 +82,63 @@ export function sameSubnet(ip: string): string | null {
   return `${m[1]}.${m[2]}.${m[3]}.`;
 }
 
-// Pings every address on this phone's /24 network. Stops early if `want` (an
-// instance id) is found. About 254 x 3 quick requests, 48 at a time.
-export async function scan(opts: { want?: string; onFound?: (f: Found) => void; signal?: { cancelled: boolean } } = {}): Promise<Found[]> {
+export interface ScanProgress { network: string; checked: number; total: number }
+
+export interface ScanOptions {
+  want?: string;                          // stop as soon as this computer id answers
+  onFound?: (f: Found) => void;
+  onProgress?: (p: ScanProgress) => void;
+  signal?: { cancelled: boolean };
+  prefix?: string;                        // tests only: scan this network instead of the phone's
+  ports?: number[];
+}
+
+// The phone's Wi-Fi network as "192.168.4.", or an error that says why there isn't one.
+async function phoneNetwork(): Promise<string> {
   // Loaded here so the rest of this file also runs in Node tests.
-  const { getIpAddressAsync } = require('expo-network') as typeof import('expo-network');
-  const ip = await getIpAddressAsync().catch(() => '');
+  const Network = require('expo-network') as typeof import('expo-network');
+  const state = await Network.getNetworkStateAsync().catch(() => null);
+  if (state && state.type !== Network.NetworkStateType.WIFI && state.type !== Network.NetworkStateType.ETHERNET) {
+    throw new Error("This phone isn't on Wi-Fi. Connect it to the same Wi-Fi as the computer.");
+  }
+  const ip = await Network.getIpAddressAsync().catch(() => '');
   const prefix = sameSubnet(ip);
-  if (!prefix) throw new Error("This phone isn't on Wi-Fi.");
-  const targets: string[] = [];
-  for (const port of PORTS) for (let i = 1; i < 255; i++) targets.push(`http://${prefix}${i}:${port}`);
+  if (!prefix) throw new Error(`Couldn't read this phone's Wi-Fi address${ip ? ` (got ${ip})` : ''}. Type the computer's address instead.`);
+  return prefix;
+}
+
+// Pings every address on the phone's network: port 8787 first, the other ports only if
+// nothing answered there. 64 at a time, each given 1.2 seconds, so a pass takes about 5 seconds.
+export async function scan(opts: ScanOptions = {}): Promise<Found[]> {
+  const prefix = opts.prefix ?? (await phoneNetwork());
+  const ports = opts.ports ?? PORTS;
   const found: Found[] = [];
   const seen = new Set<string>();
-  let next = 0;
-  let stop = false;
-  const worker = async () => {
-    while (!stop && !opts.signal?.cancelled && next < targets.length) {
-      const base = targets[next++];
-      const id = await ping(base, 900);
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-      const f = await describe(base, id);
-      found.push(f);
-      opts.onFound?.(f);
-      if (opts.want && id === opts.want) stop = true;
-    }
-  };
-  await Promise.all(Array.from({ length: 48 }, worker));
+  const network = prefix + 'x';
+  const total = 254 * ports.length;
+  let checked = 0;
+  for (const port of ports) {
+    const targets: string[] = [];
+    for (let i = 1; i < 255; i++) targets.push(`http://${prefix}${i}:${port}`);
+    let next = 0;
+    let stop = false;
+    const worker = async () => {
+      while (!stop && !opts.signal?.cancelled && next < targets.length) {
+        const base = targets[next++];
+        const id = await ping(base, 1200);
+        checked++;
+        opts.onProgress?.({ network, checked, total });
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        const f = await describe(base, id);
+        found.push(f);
+        opts.onFound?.(f);
+        if (opts.want && id === opts.want) stop = true;
+      }
+    };
+    await Promise.all(Array.from({ length: 64 }, worker));
+    if (found.length || opts.signal?.cancelled) break;
+    checked = 254 * (ports.indexOf(port) + 1);
+  }
   return found;
 }

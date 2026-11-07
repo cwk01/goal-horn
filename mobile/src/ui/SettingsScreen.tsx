@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { scan, tryAddress, type Found } from '../discover';
+import { scan, tryAddress, type Found, type ScanProgress } from '../discover';
 import type { HornSource, HornType, Resolved } from '../library';
 import type { LinkStatus } from '../remote';
 import { DEFAULT_LIBRARY_URL, type Settings } from '../settings';
@@ -163,28 +163,43 @@ function Computer(p: Props & { name: string; setName: (v: string) => void }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const [addr, setAddr] = useState('');
+  const [progress, setProgress] = useState<ScanProgress | null>(null);
   const cancel = useRef({ cancelled: false });
 
   useEffect(() => () => { cancel.current.cancelled = true; }, []);
   useEffect(() => { if (!p.visible) { cancel.current.cancelled = true; setBusy(false); } }, [p.visible]);
 
+  // Always ends with a message: what it found, that it found nothing, or that it stopped.
   const find = async () => {
-    cancel.current = { cancelled: false };
-    setBusy(true); setFound([]); setMsg('');
+    const run = { cancelled: false };
+    cancel.current = run;
+    setBusy(true); setFound([]); setMsg(''); setProgress(null);
+    const limit = setTimeout(() => { run.cancelled = true; }, 30000);
+    let net = '';
     try {
-      const list = await scan({ signal: cancel.current, onFound: f => setFound(prev => [...prev.filter(x => x.id !== f.id), f]) });
-      if (!cancel.current.cancelled && !list.length) setMsg("No Goal Horn computer answered on this Wi-Fi. Make sure Goal Horn is open on the computer and the phone is on the same network, or type its address below.");
+      const list = await scan({
+        signal: run,
+        onProgress: pr => { net = pr.network; setProgress(pr); },
+        onFound: f => setFound(prev => [...prev.filter(x => x.id !== f.id), f]),
+      });
+      if (list.length) setMsg(list.length === 1 ? 'Found 1 computer. Tap Join.' : `Found ${list.length} computers. Tap Join on yours.`);
+      else if (run.cancelled && !p.visible) setMsg('');
+      else setMsg(`${run.cancelled ? 'Stopped. ' : ''}No Goal Horn computer answered on ${net || 'this Wi-Fi'}. Check that Goal Horn is open on the computer and that the phone is on the same Wi-Fi. On Windows, Goal Horn has to be allowed through the firewall on private networks. You can also type the address shown under Speakers on the computer.`);
     } catch (e: any) {
       setMsg(e?.message || String(e));
     } finally {
+      clearTimeout(limit);
       setBusy(false);
+      setProgress(null);
     }
   };
 
   const connect = async () => {
-    setBusy(true); setMsg('');
+    if (!addr.trim()) { setMsg("Type the computer's address first, like 192.168.4.20."); return; }
+    setBusy(true); setMsg(`Trying ${addr.trim()}`);
     const f = await tryAddress(addr).catch(() => null);
     setBusy(false);
+    setMsg('');
     if (f) p.onJoin(f);
     else setMsg(`Nothing answered at ${addr.trim()}. Goal Horn uses port 8787; the address is under Speakers on the computer.`);
   };
@@ -222,8 +237,9 @@ function Computer(p: Props & { name: string; setName: (v: string) => void }) {
       <Text style={styles.h}>Goal Horn computer</Text>
       <Text style={styles.hint}>If Goal Horn is running on a computer or home server on this Wi-Fi, join it. The phone then presses that computer's horn and plays along with its other speakers.</Text>
       <View style={styles.actions}>
-        <Btn text={busy ? 'Looking' : 'Find computers'} onPress={busy ? () => { cancel.current.cancelled = true; } : find} />
+        <Btn text={busy ? 'Stop' : 'Find computers'} onPress={busy ? () => { cancel.current.cancelled = true; } : find} />
         {busy && <ActivityIndicator color={p.palette.accent} />}
+        {busy && <Text style={[styles.hint, { alignSelf: 'center' }]}>{progress ? `Checking ${progress.network}: ${progress.checked} of ${progress.total}` : 'Reading this phone\'s Wi-Fi'}</Text>}
       </View>
       {found.map(f => (
         <View key={f.id} style={[styles.box, styles.current]}>

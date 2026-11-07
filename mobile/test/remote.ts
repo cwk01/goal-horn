@@ -7,7 +7,8 @@ import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { tryAddress } from '../src/discover';
+import { scan, tryAddress } from '../src/discover';
+import net from 'node:net';
 import { leagues as phoneLeagues } from '../src/leagues';
 import { Remote } from '../src/remote';
 
@@ -53,6 +54,29 @@ const ok = (cond: unknown, msg: string) => { assert.ok(cond, msg); pass++; conso
   const f = await tryAddress(`127.0.0.1:${port}`);
   ok(f && f.id.length > 10, 'phone finds the computer by typed address');
   ok(await tryAddress('127.0.0.1:1') === null, 'a wrong address finds nothing');
+
+  // Network scan finds it (the server listens on every address, so 127.0.0.x all answer).
+  const progress: number[] = [];
+  const hits = await scan({ prefix: '127.0.0.', ports: [port], onProgress: pr => progress.push(pr.checked) });
+  ok(hits.length === 1 && hits[0].id === f!.id, 'Find computers finds it once, by its id');
+  ok(progress.length > 0 && Math.max(...progress) <= 254, 'the scan reports progress');
+
+  // Every address accepts the connection and never answers: the scan still ends, empty.
+  const silent = net.createServer(() => {}).listen(18798, '0.0.0.0');
+  const t0 = Date.now();
+  const none = await scan({ prefix: '127.0.0.', ports: [18798] });
+  const took = Date.now() - t0;
+  silent.close();
+  ok(none.length === 0 && took < 12000, `a scan of addresses that never answer still ends (${(took / 1000).toFixed(1)}s)`);
+
+  // Stop partway: it ends right away.
+  const sig = { cancelled: false };
+  setTimeout(() => { sig.cancelled = true; }, 300);
+  const t1 = Date.now();
+  const silent2 = net.createServer(() => {}).listen(18798, '0.0.0.0');
+  await scan({ prefix: '127.0.0.', ports: [18798], signal: sig });
+  silent2.close();
+  ok(Date.now() - t1 < 3000, 'Stop ends the scan within a couple of seconds');
 
   const remote = new Remote(f!, () => ({ name: 'Colby phone', playHere: true }));
   const plays: string[] = [];
