@@ -8,6 +8,14 @@ It works like the desktop app: press the horn when you see the goal on TV, and e
 
 Download `Goal-Horn-android.apk` from the latest `android-v` release on [GitHub](https://github.com/cwk01/goal-horn/releases) and open it on the phone. Android asks once to allow installs from your browser or file app; allow it, then tap **Install**.
 
+## Joining a Goal Horn computer
+
+If the desktop app or the Docker version is running on your Wi-Fi, the phone can join it: **Settings > Goal Horn computer > Find computers**, then **Join**. If it doesn't show up, type the computer's address (it's under **Speakers** on the computer, like `192.168.4.20`) and tap **Connect**.
+
+Once joined, the computer runs the game. The phone shows its scoreboard, the horn button sounds the horn on every speaker the computer has, and the phone plays it too unless you turn off **Play the horn on this phone** to use it as a remote only. The team, automatic horn and TV delay settings change on the computer; horn sounds are set on the computer. Presses from the phone teach the computer the TV delay the same as presses on the computer.
+
+The phone finds the computer again if the router gives it a new IP address, and reconnects if the computer restarts. **Leave** goes back to the phone running on its own.
+
 ## During a game
 
 Leave Goal Horn open on screen. Android pauses apps in the background, so the score and the horn stop updating if you switch away or lock the phone. The app keeps the screen on from 30 minutes before the game until it ends (turn that off in Settings). Plugging the phone in is a good idea.
@@ -23,6 +31,7 @@ The app downloads your team's horn from `https://goalhorn.colbykordas.com/horns`
 ```
 npm install
 npm test             # tracker, delay learning and formatting with fake games
+npm run test:remote  # joins the real desktop server (../src/server) with fake games
 npm run typecheck
 npx expo run:android # build and run on a connected phone or emulator (needs Android Studio)
 ```
@@ -35,6 +44,7 @@ Layout:
 - `src/leagues/`: one adapter per league, ported from the desktop app's `src/server/leagues/`, plus `last()` for the previous game's goals
 - `src/tracker.ts`: polls the game, applies the TV delay, learns it from presses, sounds the automatic horns
 - `src/library.ts`: horn library download and your own MP3s
+- `src/discover.ts`, `src/remote.ts`, `src/sse.ts`: finding and following a Goal Horn computer
 - `src/teams.ts`: generated from `src/shared/teams.js`; regenerate it when teams change there
 - `src/ui/`: horn button, game cards, goals list, settings
 - `plugins/withReleaseSigning.js`: signs release builds with the upload key

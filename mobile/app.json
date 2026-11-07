@@ -2,14 +2,14 @@
   "expo": {
     "name": "Goal Horn",
     "slug": "goal-horn",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0C0C0D",
     "android": {
       "package": "com.colbykordas.goalhorn",
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#131A22",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -50,7 +50,7 @@
         "expo-build-properties",
         {
           "android": {
-            "usesCleartextTraffic": false
+            "usesCleartextTraffic": true
           }
         }
       ],

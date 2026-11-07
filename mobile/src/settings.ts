@@ -18,7 +18,12 @@ export interface Settings {
   keepAwake: boolean;       // keep the screen on while a game is on
   libraryUrl: string;
   setupDone: boolean;
+  joined: Joined | null;    // the Goal Horn computer this phone follows, if any
+  playHere: boolean;        // when joined: play the horn on this phone too
+  speakerName: string;      // when joined: what the computer's Speakers list calls this phone
 }
+
+export interface Joined { id: string; base: string; label: string; urls: string[] }
 
 export const DEFAULTS: Settings = {
   league: 'NHL',
@@ -32,6 +37,9 @@ export const DEFAULTS: Settings = {
   keepAwake: true,
   libraryUrl: DEFAULT_LIBRARY_URL,
   setupDone: false,
+  joined: null,
+  playHere: true,
+  speakerName: '',
 };
 
 const clamp = (v: unknown, lo: number, hi: number, dflt: number) => {
@@ -45,10 +53,14 @@ export function clean(d: Partial<Settings>): Settings {
   if (!findTeam(out.league, out.team)) out.team = teams[out.league][0].abbrev;
   out.delay = clamp(out.delay, 0, 120, DEFAULTS.delay);
   out.volume = clamp(out.volume, 0, 100, DEFAULTS.volume);
-  for (const k of ['autoGoal', 'autoWin', 'learnDelay', 'keepAwake', 'setupDone'] as const) out[k] = !!out[k];
+  for (const k of ['autoGoal', 'autoWin', 'learnDelay', 'keepAwake', 'setupDone', 'playHere'] as const) out[k] = !!out[k];
   out.delayMeasured = Array.isArray(out.delayMeasured) ? out.delayMeasured.filter(Number.isFinite).slice(-3) : [];
   const u = String(out.libraryUrl || '').trim().replace(/\/+$/, '');
   out.libraryUrl = /^https?:\/\//i.test(u) ? u : DEFAULT_LIBRARY_URL;
+  const j = out.joined;
+  out.joined = j && typeof j.id === 'string' && /^https?:\/\//.test(String(j.base))
+    ? { id: j.id, base: String(j.base), label: String(j.label || j.base), urls: Array.isArray(j.urls) ? j.urls.map(String) : [] } : null;
+  out.speakerName = String(out.speakerName || '').slice(0, 40);
   return out;
 }
 
