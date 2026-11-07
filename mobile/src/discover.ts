@@ -70,7 +70,7 @@ export async function probe(base: string, ms = 1500): Promise<{ id: string | nul
   const tries = [getJSON(url, ms).then(check)];
   if (typeof XMLHttpRequest !== 'undefined') tries.push(xhrJSON(url, ms).then(check));
   // First success wins; otherwise report each path's error.
-  return new Promise(resolve => {
+  const r = await new Promise<{ id: string | null; error: string }>(resolve => {
     let left = tries.length;
     const errors: string[] = [];
     tries.forEach((t, i) => t.then(
@@ -78,15 +78,28 @@ export async function probe(base: string, ms = 1500): Promise<{ id: string | nul
       e => { errors[i] = msg(e); if (--left === 0) resolve({ id: null, error: [...new Set(errors)].join('; other try: ') }); },
     ));
   });
+  if (r.id || !/HTTP 404/.test(r.error)) return r;
+  // Goal Horn 1.0.1 and earlier have no /api/ping. Recognize them by /api/state and
+  // use the address as the id (they have no id of their own).
+  try {
+    const st = await getJSON(base.replace(/\/+$/, '') + '/api/state', ms + 1000);
+    if (st && typeof st.version === 'string' && st.settings && st.horns) return { id: LEGACY + base.replace(/\/+$/, ''), error: '' };
+  } catch (e) { /* not Goal Horn */ }
+  return r;
 }
+
+// Prefix on ids made up for older desktop versions that don't report their own.
+export const LEGACY = 'address:';
 
 // Reads the computer's details once it has answered a ping.
 export async function describe(base: string, id: string): Promise<Found> {
   base = base.replace(/\/+$/, '');
   try {
     const s = await getJSON(base + '/api/state', 4000);
+    // 1.0.1 and earlier list only speaker page addresses.
+    const old = (s.speakerUrls || []).map((u: string) => String(u).replace(/\/speaker$/, ''));
     const names: string[] = s.home?.names || [];
-    const ips: string[] = s.home?.ips || [];
+    const ips: string[] = s.home?.ips || (s.home ? [] : old);
     const host = (u: string) => u.replace(/^https?:\/\//, '').replace(/:\d+$/, '');
     return { id, base, label: names[0] ? host(names[0]).replace(/\.local$/, '') : host(base), team: s.team?.name || '', urls: [...names, ...ips] };
   } catch (e) {
