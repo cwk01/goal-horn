@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy policy: Goal Horn</title>
+<meta name="description" content="What the Goal Horn apps for Android, Windows, Mac and Linux do and don't do with your information.">
+<link rel="icon" href="icon.svg">
+<style>
+@font-face { font-family: 'Big Shoulders Display'; font-weight: 800; font-display: swap; src: url('fonts/big-shoulders-display-latin-800-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Atkinson Hyperlegible'; font-weight: 400; font-display: swap; src: url('fonts/atkinson-hyperlegible-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Atkinson Hyperlegible'; font-weight: 700; font-display: swap; src: url('fonts/atkinson-hyperlegible-latin-700-normal.woff2') format('woff2'); }
+:root { --bg: #131A22; --line: #2D3946; --text: #ECF1F6; --muted: #94A2B3; --team: #FCB514;
+  --display: 'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif; --body: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 18px/1.6 var(--body); }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--team); outline-offset: 3px; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+header { padding: 22px 0; }
+header a { font: 800 26px/1 var(--display); display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+header img { width: 30px; height: 30px; }
+h1 { font: 800 52px/1 var(--display); margin: 30px 0 8px; }
+h2 { font-size: 21px; margin: 36px 0 8px; }
+p, li { color: var(--muted); }
+strong { color: var(--text); }
+.date { margin: 0 0 30px; }
+footer { color: var(--muted); font-size: 15px; padding: 30px 0 50px; margin-top: 50px; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><a href="./"><img src="icon.svg" alt="">Goal Horn</a></header>
+
+  <h1>Privacy policy</h1>
+  <p class="date">Effective November 20, 2026</p>
+
+  <p>This policy covers the Goal Horn app for Android and the Goal Horn desktop app for Windows, Mac and Linux, including the Docker version. Goal Horn is made by Colby Kordas.</p>
+
+  <p><strong>Goal Horn doesn't collect, store or share any personal information.</strong> There are no accounts, no ads, no analytics and no crash reporting. Nothing you do in the app is sent to us.</p>
+
+  <h2>What stays on your device</h2>
+  <p>Your team, settings, TV delay, goal list and any MP3s you choose are saved on your phone or computer only. Uninstalling the app deletes them.</p>
+
+  <h2>Who the app talks to</h2>
+  <p>To show scores and play horns, the app downloads public data directly from these services:</p>
+  <ul>
+    <li>NHL (api-web.nhle.com, assets.nhle.com) for NHL and AHL scores and logos</li>
+    <li>HockeyTech (lscluster.hockeytech.com, assets.leaguestat.com) for AHL and PWHL scores</li>
+    <li>MLB (statsapi.mlb.com, mlbstatic.com) for baseball scores and logos</li>
+    <li>ESPN (site.api.espn.com, espncdn.com) for football scores and logos</li>
+    <li>goalhorn.colbykordas.com, hosted on Cloudflare, for team horn sounds</li>
+  </ul>
+  <p>These requests carry nothing about you beyond what every web request does: your IP address and basic device information, which those services may log under their own privacy policies. Goal Horn doesn't keep logs of horn downloads.</p>
+
+  <h2>Your Wi-Fi network</h2>
+  <p>When you use <strong>Find computers</strong> on Android, the app checks addresses on your own Wi-Fi network for a Goal Horn computer. That traffic stays on your network. The desktop app shares the game, your team and the horn with phones and browsers on the same network so they can play along.</p>
+
+  <h2>Permissions</h2>
+  <p>The Android app uses internet access, network and Wi-Fi state (to find a Goal Horn computer), audio settings (to play the horn) and vibration. It doesn't ask for your location, contacts, camera or microphone. When you pick your own MP3, Android's file picker gives the app that one file only.</p>
+
+  <h2>Children</h2>
+  <p>Goal Horn isn't directed at children and collects no information from anyone, including children.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy changes, the new version will be posted on this page with a new effective date. The app's source code is public at <a href="https://github.com/cwk01/goal-horn">github.com/cwk01/goal-horn</a>, so you can check what it does.</p>
+
+  <h2>Contact</h2>
+  <p>Questions: <a href="mailto:cwk@colbykordas.com">cwk@colbykordas.com</a></p>
+
+  <footer>Goal Horn is not affiliated with any league or team.</footer>
+</div>
+</body>
+</html>

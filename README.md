@@ -56,6 +56,10 @@ It's less exact than pressing it yourself. Scores reach the data feeds anywhere 
 
 The win horn plays on its own when the game ends and your team won. Turn that off in Settings if you'd rather press it.
 
+## Android
+
+There's a separate phone app that runs on its own, with no computer: it follows your team, shows the score and next game, lists your team's goals, and plays the horn on the phone. Download `Goal-Horn-android.apk` from the latest `android-v` release on [GitHub](https://github.com/cwk01/goal-horn/releases). See [`mobile/README.md`](mobile/README.md).
+
 ## Running it without a screen
 
 On a Raspberry Pi or home server, Goal Horn can run without a window and play through that machine's speakers.
@@ -117,6 +121,7 @@ Layout:
 - `src/server/leagues/`: one adapter per league, each returning the same game shape
 - `src/server/tracker.js`: polls the game, applies the TV delay, decides when to sound the horn
 - `src/web/`: control page and speaker page
+- `mobile/`: the Android app (Expo / React Native), built by `.github/workflows/android.yml`
 - `site/`: the download page
 - `functions/horns/`: serves the horn library on the download site from a Cloudflare R2 bucket (`wrangler.toml` binds it)
 
