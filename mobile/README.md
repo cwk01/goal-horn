@@ -8,6 +8,8 @@ It works like the desktop app: press the horn when you see the goal on TV, and e
 
 Download `Goal-Horn-android.apk` from the latest `android-v` release on [GitHub](https://github.com/cwk01/goal-horn/releases) and open it on the phone. Android asks once to allow installs from your browser or file app; allow it, then tap **Install**.
 
+The app's package name is `goal.horn`. Copies installed from GitHub before 1.1.4 used `com.colbykordas.goalhorn`, which Android treats as a different app: uninstall that one after installing 1.1.4.
+
 ## Joining a Goal Horn computer
 
 If the desktop app or the Docker version is running on your Wi-Fi, the phone can join it: **Settings > Goal Horn computer > Find computers**, then **Join**. If it doesn't show up, type the computer's address (it's under **Speakers** on the computer, like `192.168.4.20`) and tap **Connect**.
