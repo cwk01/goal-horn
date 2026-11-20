@@ -1,6 +1,7 @@
-# Builds the Android app (mobile/) and attaches the APK to a GitHub release.
+# Builds the Android app (mobile/): an APK attached to the GitHub release, and an
+# app bundle (.aab) for Google Play, kept as a build artifact on the run.
 # Push a tag like android-v1.0.0 to release it, or run it by hand from the Actions tab
-# to get an APK as a build artifact without a release.
+# to get both as build artifacts without a release.
 #
 # Signing: phones only install an update signed with the same key as the copy they
 # already have, so make one upload key and keep it. Create it once with
@@ -59,12 +60,15 @@ jobs:
           if [ -n "$KEYSTORE" ]; then
             echo "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/goal-horn.jks"
             echo "signed=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_REF" == refs/tags/android-v* ]]; then
+            echo "::error::No upload key in secrets. Releases have to be signed with the upload key, or Play rejects the bundle and phones can't update."
+            exit 1
           else
             echo "::warning::No upload key in secrets. This APK is signed with a debug key and later builds won't install over it."
             echo "signed=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build the APK
+      - name: Build the APK and the Play bundle
         working-directory: mobile/android
         env:
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -75,13 +79,20 @@ jobs:
           if [ "${{ steps.key.outputs.signed }}" = "true" ]; then
             ARGS="-PGOALHORN_STORE_FILE=$RUNNER_TEMP/goal-horn.jks -PGOALHORN_STORE_PASSWORD=$STORE_PASSWORD -PGOALHORN_KEY_ALIAS=$KEY_ALIAS -PGOALHORN_KEY_PASSWORD=$KEY_PASSWORD"
           fi
-          ./gradlew assembleRelease --no-daemon $ARGS
+          ./gradlew assembleRelease bundleRelease --no-daemon $ARGS
           cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/Goal-Horn-android.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "$GITHUB_WORKSPACE/Goal-Horn-android.aab"
 
       - uses: actions/upload-artifact@v4
         with:
           name: Goal-Horn-android
           path: Goal-Horn-android.apk
+
+      # Upload this one in Play Console. It isn't attached to the release.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Goal-Horn-play-bundle
+          path: Goal-Horn-android.aab
 
       - name: Attach to the release
         if: startsWith(github.ref, 'refs/tags/android-v')
